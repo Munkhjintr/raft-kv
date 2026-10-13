@@ -1,9 +1,9 @@
-package kv
+﻿package kv
 
 import "sync"
 
-// Store is a thread-safe in-memory key-value store.
-// Later, Raft will feed committed commands into it.
+
+
 type Store struct {
 	mu   sync.RWMutex
 	data map[string]string

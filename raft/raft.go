@@ -1,4 +1,4 @@
-package raft
+﻿package raft
 
 import (
 	"sync"
@@ -30,23 +30,23 @@ type LogEntry struct {
 	Command interface{}
 }
 
-// Raft is a single node. Fields follow Figure 2 of the Raft paper.
+
 type Raft struct {
 	mu    sync.Mutex
 	id    int
-	peers []int // ids of all nodes, including this one
+	peers []int
 
-	// Persistent state (will be saved to disk later)
+
 	currentTerm int
-	votedFor    int // -1 means none
+	votedFor    int
 	log         []LogEntry
 
-	// Volatile state
+
 	state       State
 	commitIndex int
 	lastApplied int
 
-	// Volatile state on leaders (reinitialized after election)
+
 	nextIndex  map[int]int
 	matchIndex map[int]int
 
@@ -58,7 +58,7 @@ func New(id int, peers []int) *Raft {
 		id:            id,
 		peers:         peers,
 		votedFor:      -1,
-		log:           []LogEntry{{Term: 0}}, // dummy entry at index 0
+		log:           []LogEntry{{Term: 0}},
 		state:         Follower,
 		nextIndex:     make(map[int]int),
 		matchIndex:    make(map[int]int),
