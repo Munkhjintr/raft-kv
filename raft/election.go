@@ -22,7 +22,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		reply.VoteGranted = false
 		return
 	}
-
 	if args.Term > rf.currentTerm {
 		rf.becomeFollower(args.Term)
 	}

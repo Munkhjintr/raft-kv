@@ -1,6 +1,7 @@
 ﻿package raft
 
 import (
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -30,33 +31,32 @@ type LogEntry struct {
 	Command interface{}
 }
 
-
 type Raft struct {
-	mu    sync.Mutex
-	id    int
-	peers []int
-
+	mu        sync.Mutex
+	id        int
+	peers     []int
+	transport Transport
 
 	currentTerm int
 	votedFor    int
 	log         []LogEntry
 
-
 	state       State
 	commitIndex int
 	lastApplied int
 
-
 	nextIndex  map[int]int
 	matchIndex map[int]int
 
-	lastHeartbeat time.Time
+	lastHeartbeat   time.Time
+	electionTimeout time.Duration
 }
 
-func New(id int, peers []int) *Raft {
-	return &Raft{
+func New(id int, peers []int, t Transport) *Raft {
+	rf := &Raft{
 		id:            id,
 		peers:         peers,
+		transport:     t,
 		votedFor:      -1,
 		log:           []LogEntry{{Term: 0}},
 		state:         Follower,
@@ -64,6 +64,16 @@ func New(id int, peers []int) *Raft {
 		matchIndex:    make(map[int]int),
 		lastHeartbeat: time.Now(),
 	}
+	rf.resetElectionTimeout()
+	return rf
+}
+
+func (rf *Raft) resetElectionTimeout() {
+	rf.electionTimeout = time.Duration(150+rand.Intn(150)) * time.Millisecond
+}
+
+func (rf *Raft) Start() {
+	go rf.ticker()
 }
 
 func (rf *Raft) GetState() (term int, isLeader bool) {

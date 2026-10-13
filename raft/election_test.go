@@ -3,7 +3,7 @@ package raft
 import "testing"
 
 func newTestNode() *Raft {
-	return New(0, []int{0, 1, 2})
+	return New(0, []int{0, 1, 2}, nil)
 }
 
 func TestRequestVoteGrantsFirstVote(t *testing.T) {
