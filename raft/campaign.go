@@ -33,7 +33,10 @@ func (rf *Raft) startElection() {
 		if p == rf.id {
 			continue
 		}
-		go rf.requestVoteFrom(p, term, lastIndex, lastTerm, &votes)
+				go rf.requestVoteFrom(p, term, lastIndex, lastTerm, &votes)
+	}
+	if votes > len(rf.peers)/2 {
+		rf.becomeLeader()
 	}
 }
 

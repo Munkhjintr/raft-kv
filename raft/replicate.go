@@ -10,6 +10,7 @@ func (rf *Raft) Propose(command interface{}) (index, term int, isLeader bool) {
 	}
 	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
 	rf.persist()
+	rf.advanceCommit()
 	return len(rf.log) - 1, rf.currentTerm, true
 }
 
