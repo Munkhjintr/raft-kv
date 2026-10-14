@@ -15,6 +15,7 @@ func (rf *Raft) becomeFollower(term int) {
 	rf.state = Follower
 	rf.currentTerm = term
 	rf.votedFor = -1
+	rf.persist()
 }
 
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
@@ -37,6 +38,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.Term = rf.currentTerm
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidateID) && upToDate {
 		rf.votedFor = args.CandidateID
+		rf.persist()
 		rf.lastHeartbeat = time.Now()
 		reply.VoteGranted = true
 	} else {

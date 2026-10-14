@@ -41,7 +41,9 @@ type Raft struct {
 	id        int
 	peers     []int
 	transport Transport
+	storage   Storage
 	applyCh   chan ApplyMsg
+	dead      bool
 
 	currentTerm int
 	votedFor    int
@@ -59,10 +61,15 @@ type Raft struct {
 }
 
 func New(id int, peers []int, t Transport) *Raft {
+	return NewWithStorage(id, peers, t, nil)
+}
+
+func NewWithStorage(id int, peers []int, t Transport, st Storage) *Raft {
 	rf := &Raft{
 		id:            id,
 		peers:         peers,
 		transport:     t,
+		storage:       st,
 		applyCh:       make(chan ApplyMsg, 1024),
 		votedFor:      -1,
 		log:           []LogEntry{{Term: 0}},
@@ -71,6 +78,7 @@ func New(id int, peers []int, t Transport) *Raft {
 		matchIndex:    make(map[int]int),
 		lastHeartbeat: time.Now(),
 	}
+	rf.restore()
 	rf.resetElectionTimeout()
 	return rf
 }

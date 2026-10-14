@@ -14,7 +14,7 @@ func (rf *Raft) becomeLeader() {
 func (rf *Raft) heartbeatLoop(term int) {
 	for {
 		rf.mu.Lock()
-		if rf.state != Leader || rf.currentTerm != term {
+		if rf.dead || rf.state != Leader || rf.currentTerm != term {
 			rf.mu.Unlock()
 			return
 		}
@@ -30,7 +30,7 @@ func (rf *Raft) heartbeatLoop(term int) {
 
 func (rf *Raft) sendAppend(p, term int) {
 	rf.mu.Lock()
-	if rf.state != Leader || rf.currentTerm != term {
+	if rf.dead || rf.state != Leader || rf.currentTerm != term {
 		rf.mu.Unlock()
 		return
 	}

@@ -6,6 +6,10 @@ func (rf *Raft) ticker() {
 	for {
 		time.Sleep(10 * time.Millisecond)
 		rf.mu.Lock()
+		if rf.dead {
+			rf.mu.Unlock()
+			return
+		}
 		if rf.state != Leader && time.Since(rf.lastHeartbeat) >= rf.electionTimeout {
 			rf.startElection()
 		}
@@ -17,6 +21,7 @@ func (rf *Raft) startElection() {
 	rf.state = Candidate
 	rf.currentTerm++
 	rf.votedFor = rf.id
+	rf.persist()
 	rf.lastHeartbeat = time.Now()
 	rf.resetElectionTimeout()
 

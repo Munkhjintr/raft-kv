@@ -23,6 +23,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
+	changed := false
 	for i, e := range args.Entries {
 		idx := args.PrevLogIndex + 1 + i
 		if idx < len(rf.log) {
@@ -32,6 +33,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			rf.log = rf.log[:idx]
 		}
 		rf.log = append(rf.log, e)
+		changed = true
+	}
+	if changed {
+		rf.persist()
 	}
 
 	if args.LeaderCommit > rf.commitIndex {
