@@ -44,6 +44,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		newCommit := min(args.LeaderCommit, last)
 		if newCommit > rf.commitIndex {
 			rf.commitIndex = newCommit
+			rf.signalApply()
 		}
 	}
 	reply.Success = true

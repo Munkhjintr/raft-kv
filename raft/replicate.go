@@ -2,6 +2,13 @@ package raft
 
 import "time"
 
+func (rf *Raft) signalApply() {
+	select {
+	case rf.applyNotify <- struct{}{}:
+	default:
+	}
+}
+
 func (rf *Raft) Propose(command interface{}) (index, term int, isLeader bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -11,6 +18,7 @@ func (rf *Raft) Propose(command interface{}) (index, term int, isLeader bool) {
 	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
 	rf.persist()
 	rf.advanceCommit()
+	rf.kick()
 	return len(rf.log) - 1, rf.currentTerm, true
 }
 
@@ -27,6 +35,8 @@ func (rf *Raft) advanceCommit() {
 		}
 		if count > len(rf.peers)/2 {
 			rf.commitIndex = n
+			rf.signalApply()
+			rf.kick()
 			break
 		}
 	}
@@ -34,7 +44,10 @@ func (rf *Raft) advanceCommit() {
 
 func (rf *Raft) applier() {
 	for {
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-rf.applyNotify:
+		case <-time.After(50 * time.Millisecond):
+		}
 		rf.mu.Lock()
 		if rf.dead {
 			rf.mu.Unlock()

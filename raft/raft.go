@@ -58,6 +58,9 @@ type Raft struct {
 
 	lastHeartbeat   time.Time
 	electionTimeout time.Duration
+
+	applyNotify chan struct{}
+	repNotify   map[int]chan struct{}
 }
 
 func New(id int, peers []int, t Transport) *Raft {
@@ -77,6 +80,11 @@ func NewWithStorage(id int, peers []int, t Transport, st Storage) *Raft {
 		nextIndex:     make(map[int]int),
 		matchIndex:    make(map[int]int),
 		lastHeartbeat: time.Now(),
+	}
+	rf.applyNotify = make(chan struct{}, 1)
+	rf.repNotify = make(map[int]chan struct{})
+	for _, p := range peers {
+		rf.repNotify[p] = make(chan struct{}, 1)
 	}
 	rf.restore()
 	rf.resetElectionTimeout()
