@@ -28,6 +28,10 @@ func (n *Network) SetConnected(id int, ok bool) {
 	n.connected[id] = ok
 }
 
+func (n *Network) Endpoint(from int) Transport {
+	return &endpoint{net: n, from: from}
+}
+
 func (n *Network) reachable(from, to int) (*Raft, bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
