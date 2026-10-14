@@ -31,11 +31,17 @@ type LogEntry struct {
 	Command interface{}
 }
 
+type ApplyMsg struct {
+	Index   int
+	Command interface{}
+}
+
 type Raft struct {
 	mu        sync.Mutex
 	id        int
 	peers     []int
 	transport Transport
+	applyCh   chan ApplyMsg
 
 	currentTerm int
 	votedFor    int
@@ -57,6 +63,7 @@ func New(id int, peers []int, t Transport) *Raft {
 		id:            id,
 		peers:         peers,
 		transport:     t,
+		applyCh:       make(chan ApplyMsg, 1024),
 		votedFor:      -1,
 		log:           []LogEntry{{Term: 0}},
 		state:         Follower,
@@ -74,6 +81,11 @@ func (rf *Raft) resetElectionTimeout() {
 
 func (rf *Raft) Start() {
 	go rf.ticker()
+	go rf.applier()
+}
+
+func (rf *Raft) ApplyCh() <-chan ApplyMsg {
+	return rf.applyCh
 }
 
 func (rf *Raft) GetState() (term int, isLeader bool) {

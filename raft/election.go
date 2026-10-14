@@ -8,6 +8,10 @@ func (rf *Raft) lastLogInfo() (index, term int) {
 }
 
 func (rf *Raft) becomeFollower(term int) {
+	if rf.state == Leader {
+		rf.lastHeartbeat = time.Now()
+		rf.resetElectionTimeout()
+	}
 	rf.state = Follower
 	rf.currentTerm = term
 	rf.votedFor = -1
