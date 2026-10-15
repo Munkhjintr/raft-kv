@@ -136,6 +136,31 @@ curl http://127.0.0.1:8000/status
 
 Node 0, 1, 2 нь 8000, 8001, 8002 портоор HTTP API өгнө. Төлөв нь Docker volume-д хадгалагдана.
 
+## Run on Kubernetes (kind)
+
+The cluster runs as a 3-replica StatefulSet with a headless Service and one PersistentVolumeClaim per pod.
+
+```bash
+kind create cluster --name raft
+docker build -t raft-kv:dev .
+kind load docker-image raft-kv:dev --name raft
+kubectl apply -f deploy/k8s/raft-kv.yaml
+kubectl get pods
+```
+
+Check which pod is the leader:
+
+```bash
+kubectl exec raft-kv-0 -- wget -qO- http://127.0.0.1:8000/status
+```
+
+### Failover demo
+
+1. Find the leader (`"leader":true`) and write a value through it using `kubectl port-forward`.
+2. Delete the leader pod: `kubectl delete pod raft-kv-<N>`.
+3. A new leader is elected with a higher term. Reads through the new leader return the committed value.
+4. The deleted pod is recreated, reloads its state from its volume, and rejoins as a follower.
+
 ## Using the HTTP API
 
 Check a node's status:
