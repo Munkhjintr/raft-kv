@@ -7,9 +7,9 @@ COPY . .
 # CGO унтраавал статик binary гарч, жижиг image-д ажиллана
 RUN CGO_ENABLED=0 go build -o /raft-kv ./cmd/raft-kv
 
-# Runtime stage: зөвхөн binary-г хуулна
-FROM gcr.io/distroless/static-debian12
+# Runtime stage: shell-тэй жижиг image (pod-ийн ordinal-аас ID авахад хэрэгтэй)
+FROM alpine:3.20
 WORKDIR /app
 COPY --from=build /raft-kv /app/raft-kv
-# data/node N.bin хадгалагдана 
+# data/node-N.bin энд хадгалагдана (/app/data)
 ENTRYPOINT ["/app/raft-kv"]

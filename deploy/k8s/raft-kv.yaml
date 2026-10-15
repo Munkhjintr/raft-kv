@@ -1,0 +1,69 @@
+# Headless service: pod бүр raft-kv-N.raft-kv гэсэн DNS нэр авна
+apiVersion: v1
+kind: Service
+metadata:
+  name: raft-kv
+spec:
+  clusterIP: None
+  # Pod ready болохоос өмнө ч DNS нэр resolve хийгдэх ёстой (Raft-ын эхлэлд хэрэгтэй)
+  publishNotReadyAddresses: true
+  selector:
+    app: raft-kv
+  ports:
+    - name: raft
+      port: 7000
+    - name: http
+      port: 8000
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: raft-kv
+spec:
+  serviceName: raft-kv
+  replicas: 3
+  # 3 pod зэрэг эхэлнэ, эс бөгөөс quorum үүсэхгүй
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: raft-kv
+  template:
+    metadata:
+      labels:
+        app: raft-kv
+    spec:
+      containers:
+        - name: raft-kv
+          image: raft-kv:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Hostname "raft-kv-2" -> ID "2"
+              ID=${HOSTNAME##*-}
+              exec /app/raft-kv -id "$ID" \
+                -peers "0=raft-kv-0.raft-kv:7000,1=raft-kv-1.raft-kv:7000,2=raft-kv-2.raft-kv:7000" \
+                -http 0.0.0.0:8000
+          ports:
+            - containerPort: 7000
+              name: raft
+            - containerPort: 8000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+  # Pod бүр өөрийн дисктэй (устгагдсан ч data хэвээр үлдэнэ)
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
