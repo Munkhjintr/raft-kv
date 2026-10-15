@@ -61,7 +61,7 @@ The following diagram illustrates a possible deployment; it is not a description
 
 ```mermaid
 flowchart TB
-    U["Client / Frontend"] --> G["API Gateway"]
+    U["Client / Frontend"] --> G["API Gateway Service"]
 
     G --> US["User Service"]
     G --> OS["Order Service"]
