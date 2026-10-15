@@ -215,4 +215,4 @@ All tests run with the Go race detector.
 
 ## License
 
-Add your preferred license here.
+MIT License. See [LICENSE](LICENSE) for details.
