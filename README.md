@@ -127,6 +127,15 @@ go run ./cmd/raft-kv -id 1 -peers "0=127.0.0.1:7000,1=127.0.0.1:7001,2=127.0.0.1
 go run ./cmd/raft-kv -id 2 -peers "0=127.0.0.1:7000,1=127.0.0.1:7001,2=127.0.0.1:7002" -http 127.0.0.1:8002
 ```
 
+## Run with Docker
+
+```bash
+docker compose up --build
+curl http://127.0.0.1:8000/status
+```
+
+Node 0, 1, 2 нь 8000, 8001, 8002 портоор HTTP API өгнө. Төлөв нь Docker volume-д хадгалагдана.
+
 ## Using the HTTP API
 
 Check a node's status:
