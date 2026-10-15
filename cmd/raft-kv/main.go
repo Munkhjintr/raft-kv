@@ -39,6 +39,7 @@ func main() {
 	id := flag.Int("id", 0, "node id")
 	peersFlag := flag.String("peers", "", "id=host:port,id=host:port,...")
 	httpAddr := flag.String("http", "127.0.0.1:8000", "http listen address")
+	listenAddr := flag.String("listen", "0.0.0.0:7000", "Raft TCP listen address")
 	dataDir := flag.String("data", "data", "data directory")
 	flag.Parse()
 
@@ -58,7 +59,7 @@ func main() {
 	rf := raft.NewWithStorage(*id, ids, raft.NewRPCTransport(addrs), st)
 	srv := kv.NewServer(rf)
 
-	ln, err := net.Listen("tcp", self)
+	ln, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
 		log.Fatal(err)
 	}

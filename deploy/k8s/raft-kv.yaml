@@ -43,6 +43,7 @@ spec:
               ID=${HOSTNAME##*-}
               exec /app/raft-kv -id "$ID" \
                 -peers "0=raft-kv-0.raft-kv:7000,1=raft-kv-1.raft-kv:7000,2=raft-kv-2.raft-kv:7000" \
+                -listen 0.0.0.0:7000 \
                 -http 0.0.0.0:8000
           ports:
             - containerPort: 7000
