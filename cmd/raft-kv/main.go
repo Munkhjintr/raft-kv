@@ -68,6 +68,6 @@ func main() {
 	}
 	rf.Start()
 
-	log.Printf("node %d: raft on %s, http on %s", *id, self, *httpAddr)
+	log.Printf("node %d: raft on %s, http on %s (gitops demo v1)", *id, self, *httpAddr)
 	log.Fatal(http.ListenAndServe(*httpAddr, srv.Handler()))
 }
