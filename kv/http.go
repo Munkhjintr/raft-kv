@@ -3,6 +3,7 @@ package kv
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -56,14 +57,19 @@ func (s *Server) Handler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		io.WriteString(w, res.Value)
+		// Header аль хэдийн илгээгдсэн тул алдааг зөвхөн log хийнэ
+		if _, err := io.WriteString(w, res.Value); err != nil {
+			log.Printf("write response: %v", err)
+		}
 	})
 	mux.HandleFunc("PUT /kv/{key}", s.mutation(OpPut))
 	mux.HandleFunc("POST /kv/{key}", s.mutation(OpAppend))
 	mux.HandleFunc("DELETE /kv/{key}", s.mutation(OpDelete))
 	mux.HandleFunc("GET /status", func(w http.ResponseWriter, r *http.Request) {
 		term, leader := s.rf.GetState()
-		json.NewEncoder(w).Encode(map[string]any{"term": term, "leader": leader})
+		if err := json.NewEncoder(w).Encode(map[string]any{"term": term, "leader": leader}); err != nil {
+			log.Printf("encode status: %v", err)
+		}
 	})
 	return mux
 }
