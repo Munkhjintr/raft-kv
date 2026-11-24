@@ -21,7 +21,7 @@ jobs:
       - name: Test (race detector)
         run: go test -race -count=1 ./...
 
-    lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
