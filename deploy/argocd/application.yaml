@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: raft-kv
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Munkhjintr/raft-kv.git
+    targetRevision: main
+    path: deploy/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      # Git-ээс устгасан resource-ийг cluster-аас мөн устгана
+      prune: true
+      # Cluster дээр гараар өөрчилсөн зүйл Git-ийн төлөвт буцаж орно
+      selfHeal: true

@@ -1,9 +1,20 @@
 name: Image
 
-# Runs only after code lands on main. Builds, scans with Trivy, then pushes to GHCR.
+# main дээр код орсны дараа: build -> Trivy scan -> GHCR push -> manifest-ийн tag шинэчлэх.
+# Argo CD manifest-ийн өөрчлөлтийг харж cluster-т rolling update хийнэ (GitOps).
 on:
   push:
     branches: [main]
+    # manifest/docs-ийн өөрчлөлт (түүний дотор бот-ын tag commit) image дахин build хийхгүй
+    paths-ignore:
+      - "deploy/**"
+      - "docs/**"
+      - "**/*.md"
+
+# Хоёр push дараалан орвол tag commit-ууд бие биедээ саад болохгүй
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -50,3 +61,33 @@ jobs:
           docker push "${IMAGE}:${GITHUB_SHA}"
           docker tag "${IMAGE}:${GITHUB_SHA}" "${IMAGE}:latest"
           docker push "${IMAGE}:latest"
+
+  # GitOps-ийн гогцоо: шинэ image tag-ийг Git-д commit хийнэ.
+  # GITHUB_TOKEN-оор хийсэн push нь өөр workflow-г ажиллуулдаггүй тул хязгааргүй давталт үүсэхгүй.
+  update-manifest:
+    runs-on: ubuntu-latest
+    needs: build-scan-push
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Point manifest at the new image
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          sed -i "s|newName: .*|newName: ${IMAGE}|; s|newTag: .*|newTag: ${GITHUB_SHA}|" deploy/k8s/kustomization.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/k8s/kustomization.yaml
+          if git diff --cached --quiet; then
+            echo "manifest already up to date"
+            exit 0
+          fi
+          git commit -m "deploy: raft-kv ${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
