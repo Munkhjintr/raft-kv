@@ -1,7 +1,7 @@
-﻿# raft-kv
+![CI](https://github.com/Munkhjintr/raft-kv/actions/workflows/ci.yml/badge.svg)
+ # raft-kv
 
 A fault-tolerant, replicated key-value store written in Go. The Raft consensus algorithm is implemented from scratch, with no Raft library.
-![CI](https://github.com/Munkhjintr/raft-kv/actions/workflows/ci.yml/badge.svg)
 
 ## Features
 
