@@ -9,4 +9,4 @@ resources:
 images:
   - name: raft-kv
     newName: ghcr.io/munkhjintr/raft-kv
-    newTag: ba38ad678b15168cb6034a03fe706c77eca27ea6
+    newTag: 0a224ecfdbfff35e2ddd7732742c431f1987b3bd
