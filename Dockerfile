@@ -8,7 +8,8 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /raft-kv ./cmd/raft-kv
 
 # Runtime stage: shell-тэй жижиг image (pod-ийн ordinal-аас ID авахад хэрэгтэй)
-FROM alpine:3.20
+FROM alpine:3.23
+RUN apk upgrade --no-cache
 WORKDIR /app
 COPY --from=build /raft-kv /app/raft-kv
 # data/node-N.bin энд хадгалагдана (/app/data)
