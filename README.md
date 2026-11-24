@@ -204,6 +204,68 @@ Run the test suite with Go's race detector:
 go test -race -count=3 ./...
 ```
 
+## CI/CD: GitOps pipeline
+
+Every push to `main` is tested, scanned, published, and rolled out to Kubernetes without manual steps. Git is the single source of truth for what runs in the cluster.
+
+```mermaid
+flowchart LR
+    DEV["Developer<br/>git push"] --> GH[("GitHub<br/>main")]
+
+    GH --> CI["CI workflow<br/>vet, test -race, golangci-lint"]
+    CI --> SMOKE["Kind smoke test<br/>3 pods, 1 leader,<br/>data survives rolling restart"]
+
+    GH --> IMG["Image workflow<br/>build, Trivy scan"]
+    IMG --> GHCR[("GHCR<br/>image:git-sha")]
+    IMG --> BOT["Bot commits new tag to<br/>deploy/k8s/kustomization.yaml"]
+    BOT --> GH
+
+    GH -. "polls repo" .-> ARGO["Argo CD<br/>automated sync + self-heal"]
+    ARGO --> K8S["Kubernetes<br/>raft-kv StatefulSet<br/>rolling update"]
+    GHCR -. "image pull" .-> K8S
+
+    classDef git fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef ci fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef cd fill:#fef3c7,stroke:#d97706,color:#78350f
+    class DEV,GH,GHCR git
+    class CI,SMOKE,IMG,BOT ci
+    class ARGO,K8S cd
+```
+
+| Stage | What it does |
+|---|---|
+| `ci.yml` / test | `go vet` and `go test -race ./...` |
+| `ci.yml` / lint | `golangci-lint` v2 |
+| `ci.yml` / smoke | Builds the image, deploys the 3-node cluster to a throwaway Kind cluster, checks that exactly one leader is elected, writes a key, runs a rolling restart, and verifies the key survived (`scripts/smoke.sh`) |
+| `image.yml` | Builds the image, fails on fixable HIGH/CRITICAL vulnerabilities (Trivy), pushes `ghcr.io/munkhjintr/raft-kv:<git-sha>`, then commits the new tag to `deploy/k8s/kustomization.yaml` |
+| Argo CD | Watches `deploy/k8s` and applies changes to the cluster; `selfHeal` reverts manual drift and `prune` removes resources deleted from Git |
+
+### Try it
+
+Install Argo CD and register the application:
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -f deploy/argocd/application.yaml
+```
+
+**Rolling update keeps the data.** Write a key to the leader, push a code change, and wait for Argo CD to roll the pods one by one. After it finishes, find the new leader through `GET /status` and read the key back.
+
+```bash
+kubectl port-forward pod/raft-kv-1 8001:8000   # use the pod that reports "leader":true
+curl -X PUT --data "hello-gitops" http://localhost:8001/kv/demo
+# push a change, wait for the rollout, then port-forward to the new leader:
+curl http://localhost:8001/kv/demo             # -> hello-gitops
+```
+
+**Self-heal.** Delete a managed resource by hand and watch Argo CD restore it from Git:
+
+```bash
+kubectl delete service raft-kv
+kubectl get service raft-kv   # recreated within moments
+```
+
 ### Covered Scenarios
 
 - Leader election, stable leadership, and re-election after leader failure
