@@ -1,0 +1,9 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      # Close() болон fmt.Fprint* дээрх errcheck нь Go-д ердийн, дуу чимээ ихтэй.
+      - linters:
+          - errcheck
+        text: "Error return value of .*(Close|Fprintf|Fprintln).* is not checked"
