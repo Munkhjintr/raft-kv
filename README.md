@@ -240,6 +240,10 @@ flowchart LR
 | `image.yml` | Builds the image, fails on fixable HIGH/CRITICAL vulnerabilities (Trivy), pushes `ghcr.io/munkhjintr/raft-kv:<git-sha>`, then commits the new tag to `deploy/k8s/kustomization.yaml` |
 | Argo CD | Watches `deploy/k8s` and applies changes to the cluster; `selfHeal` reverts manual drift and `prune` removes resources deleted from Git |
 
+### Self-healing
+
+Deleting a managed resource by hand (for example `kubectl delete service raft-kv`) is reverted automatically: Argo CD detects the drift from Git and recreates the resource within seconds.
+
 ### Try it
 
 Install Argo CD and register the application:
